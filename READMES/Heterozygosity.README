@@ -1,0 +1,21 @@
+##############
+## PAIRWISE ##
+##############
+
+# Calculates toe heterzygosity from a list of individuals across all callable sites. Requires metadata file from standard input with format:
+        # Genus_species_ID
+        # e.g. Lemur_catta_DLC_0582
+
+# Calculate the total number of callable sites in the genome form callability mask in /scratch/devel/jorkin/STREPS/2021/CALLABILITY_MASKS/SINGLE/$ID/$ID.callable.bed.gz
+# Calculate the number of heterozygous positions in the VCF from /scratch/devel/jorkin/STREPS/2021/VCF/SINGLE/$ID/$ID.variable.filtered.HF.snps.ABfilter.vcf.gz
+# Divide heterozygous by total positions
+
+bash ../../SCRIPTS/Heterozygosity_perBase_batch_array.sh ../samples_all.txt > Heterozygosity_perBase_batch_samplesAll.array
+sub_array.py -n HetPair -u 1 -w "00:30:00" -a Heterozygosity_perBase_batch_samplesAll.array
+
+bash ../SCRIPTS/Heterozygosity_perBase_batch_array.sh samples_all_REDO.txt > Heterozygosity_perBase_batch_samplesAll_REDO.array # TIMEOUTs
+sub_array.py -n HetPair -u 1 -w "02:00:00" -a Heterozygosity_perBase_batch_samplesAll_REDO.array
+
+# Make table: Sample	CallableSites	HeterozygousSites	PairwiseHeterozygosity
+
+while read line; do call=$(cat $line/*.callable.bed.sum);nhet=$(cat $line/*.variable.filtered.HF.snps.ABfilter.nhets.sum) ;het=$(cat $line/*.callable.filtered.snps.vcf.HetPairwise); echo -e "$line\t$call\t$nhet\t$het"; done < ../samples_all.txt > PairwiseHetTable_Lemurs.txt

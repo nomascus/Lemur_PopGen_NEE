@@ -1,0 +1,270 @@
+############# MAPPING ##################
+
+##### 2021-10-05 - 2021-10-?? #######
+
+
+> I need to map reads from several different sources and file types. I also prioritized the Lemuroidea and Daubentonia here, which probably made things more complicated than need be, but that was a result of not having enough space early on
+
+# Baylor files need to be remapped from the raw BAMs following this format. Note that the raw BAM needs to be sorted before converting to fastq
+
+samtools sort -T /scratch_tmp/Daubentonia_madagascariensis_DLC_6261.sorted.tmp.bam -l0 -n -@8  /scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_ALL_BAM_LINKS/Daubentonia_madagascariensis_DLC_6261.bam | bedtools bamtofastq -i - -fq /dev/stdout -fq2 /dev/stdout | cutadapt -j 8 --interleaved -m 30 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT - | bwa mem -pt 8 /scratch/devel/jorkin/STREPS/REFERENCES/*/Daubentonia_madagascariensis.fasta - | samtools sort -@ 8 -m 3G -O bam -T /scratch_tmp/Daubentonia_madagascariensis_DLC_6261.map_sort.TMP -o /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/Daubentonia_madagascariensis_DLC_6261/Daubentonia_madagascariensis_DLC_6261.map.sorted.bam^/scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/Daubentonia_madagascariensis_DLC_6261/Daubentonia_madagascariensis_DLC_6261.map.sorted.bam.log
+
+# CNAG files in FASTQ format are mapped as follows:
+
+~/scratch/programs/bbmap/reformat.sh -Xmx2g in1=/scratch/project/production/shared/transfers/CGL_36/20210512/FASTQ/H37G7DSX2_2_379UDI-idt-UMI_1.fastq.gz in2=/scratch/project/production/shared/transfers/CGL_36/20210512/FASTQ/H37G7DSX2_2_379UDI-idt-UMI_2.fastq.gz out=stdout.fq | cutadapt -j 8 --interleaved -m 30 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT - | bwa mem -pt 8 /scratch/devel/jorkin/STREPS/REFERENCES/*/mLemCat1.pri.cur.20210716.fasta - | samtools sort -@ 8 -m 3G -O bam -T /scratch_tmp/34356402/H37G7DSX2_2_379UDI-idt-UMI_map_sort.TMP -o /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/Eulemur_cinereiceps_PD_1025/H37G7DSX2_2_379UDI-idt-UMI.dedup.sorted.bam^/scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/Eulemur_cinereiceps_PD_1025/H37G7DSX2_2_379UDI-idt-UMI.dedup.sorted.bam.log
+
+# CNAG files in CRAM format need to be sorted? and converted to fastq prior to mapping. Note also that the reference assembly used to make the CRAM file has to be inlcued in the conversion.
+
+
+
+# Mapping Luca Pozzi's samples from Baylor
+
+## Files located in /scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_ALL_BAM_LINKS or /scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_LUCA_BAMS
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_baylor.sh MappingMetadata_DLC_LUCA.txt > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_DLC_LUCA_2021-10-06.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n mapLPZDLC -w "23:30:00" -u 8 -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_DLC_LUCA_2021-10-06.array
+## A lot of these failed from time out
+
+
+# Mapping all Baylor samples from DLC, PJ, and Phase1 (/home/devel/jorkin/scratch/STREPS/RAW_DATA/BAYLOR_ALL_BAM_LINKS/) from Eulemur, Hapalemur, Lemur, Prolemur, and Varecia to mLemCat VERSION 2 
+## Files located in /scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_ALL_BAM_LINKS or scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_DLC_BAMs and scratch/devel/jorkin/STREPS/RAW_DATA/BAYLOR_PJ_BAMs
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_baylor.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_Baylor_LemCat2.txt> /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_LemCat2.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n MapLemCat2 -w "23:30:00" -u 8 -r highprio -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_LemCat2.array
+## 13 of these sample failed immediately, because I had an error in the link name, which has since been corrected. Also, it was a mistake to run these jobs with -r highprio, because I can only have 64 cores running with high priority. This /	  ## will slow things down to 8 jobs at a time
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_baylor.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_Baylor_LemCat2.REDO1.txt > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_LemCat2_REDO1.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n MapLcR1 -w "23:30:00" -u 8 -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_LemCat2_REDO1.array
+## A lot of these failed from time out
+
+## Mapping Phase 1 Baylor non-LemCat Ref samples
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_baylor.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_Baylor_Phase1nonLemCat.txt >  /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_Phase1nonLemCat.array
+/scratch/scripts/LUKAS_VarCall/sub_jar.py -n mapPh1Bay -w "4-00:00:00" -u 8 -r lowprio -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_Phase1nonLemCat.array
+
+# Time failures:  Most of the samples from Baylor failed because the wall time limit was too short, so I need to re-run them with more time. This will result in lower priority, so they might take some time to load
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_baylor.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_Baylor_TimeREDO1.txt > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_TimeREDO1.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n mapDLC -w "4-00:00:00" -u 8 -r lowprio -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Baylor_TimeREDO1.array
+
+# Mapping Streps downloaded from public sources
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_Public.sh /scratch/devel/jorkin/STREPS/2021/METADATA/Mapping_Public_2021-09-30.txt > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Public_2021-10-05.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n MapLemCat2P -w "23:30:00" -u 8 -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Public_2021-10-05.array
+## A lot of these failed from time out
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_lukas_Public.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_Public_TimeREDO1.txt  > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Public_TimeREDO1.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n MapPub -w "4-00:00:00" -u 8 -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_Public_TimeREDO1.array
+
+bash ../SCRIPTS/map_trim_sort_lukas_Public.sh ../METADATA/MappingMetadata_Public_TrimMapSort_2022-02-11_8hr.txt > MappingMetadata_Public_TrimMapSort_2022-02-11_8hr.array
+sub_array.py -n Map8hr -u 8 -w "08:00:00" -a MappingMetadata_Public_TrimMapSort_2022-02-11_8hr.array
+
+bash ../SCRIPTS/map_trim_sort_lukas_Public.sh ../METADATA/MappingMetadata_Public_TrimMapSort_2022-02-11_1day.txt > MappingMetadata_Public_TrimMapSort_2022-02-11_1day.array
+sub_array.py -n Map24 -u 8 -w "23:59:00" -a MappingMetadata_Public_TrimMapSort_2022-02-11_1day.array
+
+bash ../SCRIPTS/map_trim_sort_lukas_Public.sh ../METADATA/MappingMetadata_Public_TrimMapSort_2022-02-11_4day.txt > MappingMetadata_Public_TrimMapSort_2022-02-11_4day.array
+sub_array.py -n Map4d -u 8 -w "4-00:00:00" -r lowprio -a MappingMetadata_Public_TrimMapSort_2022-02-11_4day.array
+
+# Mapping all New CNAG and  Phase 1 samples from Eulemur, Hapalemur, Lemur, Prolemur, and Varecia to mLemCat VERSION 2.
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_cnag.sh  /scratch/devel/jorkin/STREPS/2021/METADATA/CNAG_LcattaRefIDs.txt > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadataCNAG_Lcatta2_2021-10-05.array
+~/scratch/scripts/LUKAS_VarCall/sub_jar.py -n mapLcat2_cnag -w "08:00:00" -u 8 -a /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadataCNAG_Lcatta2_2021-10-05.array 
+
+## 88 of 234 libraries failed, because of a file location error. CNAG removed the some of the older fastqs and replaced them with CRAMs, so these need to be remapped 
+
+## Converting crams to fastq:
+~/scratch/scripts/cram2fastq.sh
+CNAG_Cramlist2.array
+
+#rename files to match where necessary
+ls *R1_001.fastq.gz* >tmp
+while read line; do new=$(echo $line | sed s/R1_001.fastq.gz/1.fq.gz/);mv $line $new; done <tmp
+ls *R2_001.fastq.gz* >tmp
+while read line; do new=$(echo $line | sed s/R2_001.fastq.gz/2.fq.gz/);mv $line $new; done <tmp
+
+bash /scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_cnag_v2.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_CNAG_phase1.tsv
+bash /scratch/devel/jorkin/STREPS/2021/SCRIPTS/map_trim_sort_cnag_v2.sh /scratch/devel/jorkin/STREPS/2021/METADATA/MappingMetadata_CNAG_phase1_part2.tsv > /scratch/devel/jorkin/STREPS/2021/TRIM_MAP_SORT/MappingMetadata_CNAG_phase1_missing.array
+
+
+
+TEST FOR ERRORS SCRIPTS: /home/devel/jorkin/scratch/STREPS/2021/TRIM_MAP_SORT$ for f in */*.bam.log; do sort=$(tail $f |grep "bam_sort_core");SLURM=$(tail $f | grep "FINISHED SLURM"); time=$(tail $f |grep "time"); echo -e "$f\t$SLURM\t$time\t$sort";done |less -S	
+
+
+# Merge bams, mark duplicates, and add read groups. 
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/merge_rmdup_add_rg.baylor.sh MergeAddRGMarkDup_mLemCat2_ALL.txt
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/merge_rmdup_add_rg.baylor.sh ../METADATA/MergeAddRGMarkDup_Lemurs_2022-02-15.txt > MergeAddRGMarkDup_Lemurs_2022-02-15.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/merge_rmdup_add_rg.baylor.sh ../METADATA/MergeAddRGMarkDup_Lemurs_2022-02-17.txt > MergeAddRGMarkDup_Lemurs_2022-02-17.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/merge_rmdup_add_rg.baylor.sh ../METADATA/MergeAddRGMarkDup_Lemurs_2022-02-21.txt > MergeAddRGMarkDup_Lemurs_2022-02-21.array
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n CNAGdup -u 8 -w "23:59:00" -a MergeAddRGMarkDup_mLemCat2_All.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n CNAGdup -u 8 -w "23:59:00" -a MergeAddRGMarkDup_Lemurs_2022-02-15.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n CNAGdup -u 8 -w "23:59:00" -a MergeAddRGMarkDup_Lemurs_2022-02-17.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n CNAGdup -u 8 -w "23:59:00" -a MergeAddRGMarkDup_Lemurs_2022-02-21.array
+
+## Eulemur_collaris_PD_0247 and Hapalemur_occidentalis_PD_160 keep failing at bammarkduplicates. I think this has to do with the version of biobambam bein loaded. 
+
+
+# Make 30 Mb windows from new mLemCat1_v2 assembly for haplotype caller
+
+cat /scratch/devel/jorkin/STREPS/REFERENCES/Lemur_catta2/mLemCat1.pri.cur.20210716.fasta.fai |awk '{print $1"\t"0"\t"$2}'| bedtools sort > /scratch/devel/jorkin/STREPS/REFERENCES/Lemur_catta2/mLemCat1.pri.cur.20210716.fasta.bed
+
+bedtools makewindows  -b /scratch/devel/jorkin/STREPS/REFERENCES/Lemur_catta2/mLemCat1.pri.cur.20210716.fasta.bed -w 1000000 |bedtools sort > /scratch/devel/jorkin/STREPS/REFERENCES/Lemur_catta2/mLemCat1.pri.cur.20210716.fasta_windows/mLemCat1.pri.cur.20210716.fasta.1MbWindows.bed
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/windowSplit.pl /scratch/devel/jorkin/STREPS/REFERENCES/Lemur_catta2/30Mb_windows
+
+###
+
+# Call variants on 30 Mb windows with GATK/4.1.7.0. The input metadata for the varcalls_30mb_win.sh is INPUT_ID\tOUTPUT_ID\tREFERENCE\tPCR_MODE. Most of the variant calls work with 1 core and 24 hours, but a few need to be redone because of random failures. in these cases, i've tried again with 2 cores and 24 hours 
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/varcalls_30mb_win.sh /scratch/devel/jorkin/STREPS/2021/METADATA/HapCall_Eulemur1.txt
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/varcalls_30mb_win.sh /scratch/devel/jorkin/STREPS/2021/METADATA/HapCall_Eulemur2.txt # Remapped Eulemur rufus DLC_5729
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/varcalls_30mb_win.sh /scratch/devel/jorkin/STREPS/2021/METADATA/HapCall_nonEulemur1.txt
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/varcalls_30mb_win.sh /scratch/devel/jorkin/STREPS/2021/METADATA/HapCall_CNAG_2022-02-15.txt
+bash ../SCRIPTS/varcalls_30mb_win.sh ../METADATA/HapCall_non-mLemcat_2022-02-17.txt > HapCall_non-mLemcat_2022-02-17.array
+bash ../SCRIPTS/varcalls_30mb_win.sh ../METADATA/HapCall_non-mLemcat_2022-02-22.txt > HapCall_non-mLemcat_2022-02-22.array
+bash ../SCRIPTS/varcalls_30mb_win.sh ../METADATA/HapCall_non-mLemcat_2022-02-26.txt > HapCall_non-mLemcat_2022-02-26.array
+
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n HapCall -u 1 -w "23:59:00" -a HapCall_Eulemur1.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n HapCall -u 1 -w "23:59:00" -a HapCall_Eulemur2.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n HapCall -u 1 -w "23:59:00" -a HapCall_nonEulemur1.array
+/scratch/devel/jorkin/STREPS/2021/SCRIPTS/LUKAS_VarCall/sub_jar.py -n HapCall -u 1 -w "23:59:00" -a HapCall_CNAG_2022-02-15.array
+
+sub_array.py -u 1 -w "23:59:00" -n HapCall -a  HapCall_non-mLemcat_2022-02-17.array
+sub_array.py -u 1 -w "23:59:00" -n HapCall -a  HapCall_non-mLemcat_2022-02-22.array
+
+
+# test for errors and rerun if necessary
+
+/home/devel/jorkin/scratch/STREPS/2021/VARIANTS_BPR$ for f in */*.log; do file=$(basename $f); yes=$(grep -c "timeMemory" $f); echo $yes | perl -slane 'if ($elapsed > 0){ print $name}' -- -name=$file -elapsed=$yes; done
+/home/devel/jorkin/scratch/STREPS/2021/VARIANTS_BPR$ for f in */*.log; do file=$(basename $f); yes=$(grep -c "xception" $f); echo $yes | perl -slane 'if ($elapsed > 0){ print $name}' -- -name=$file -elapsed=$yes; done
+/home/devel/jorkin/scratch/STREPS/2021/VARIANTS_BPR$ for f in */*.log; do file=$(basename $f); yes=$(grep -c "ERROR" $f); echo $yes | perl -slane 'if ($elapsed > 0){ print $name}' -- -name=$file -elapsed=$yes; done
+
+# Combine VarCall regions into per species versions. Note the species being excluded for single individuals
+
+#bash ../SCRIPTS/combineGVCF.sh combine_mlemcat_2021-11-18 >combine_mlemcat_2021-11-18.array
+#../SCRIPTS/LUKAS_VarCall/sub_jar.py -n combine -u 1 -w "2:00:00" -a combine_mlemcat_2021-11-18.array
+	# Single individuals: Eulemur cincereiceps, Hapalemur aureus, Hapalemur occidentalis, Hapalemur meridionalis, Hapalemur sp, Lemur sp, Varecia sp
+
+
+# Depth Mode calculations
+	##run mosDepth with depth_perBase.sh o each sample 
+bash ../../SCRIPTS/depth_perBase.sh DEPTH/PERBASE/Samples_Lemuroidea_2022-02-25.txt > DEPTH/PERBASE/Samples_Lemuroidea_2022-02-25.array
+sub_array.py -n depth1 -u 1 -w "01:30:00" -a /scratch/devel/jorkin/STREPS/2021/DEPTH/PERBASE/Samples_Lemuroidea_2022-02-25_part1.array
+sub_array.py -n depth2 -u 1 -w "01:30:00" -a /scratch/devel/jorkin/STREPS/2021/DEPTH/PERBASE/Samples_Lemuroidea_2022-02-25_part2.array 
+
+	## calculate distribution of depths with custom perl script
+bash../../SCRIPTS/depth_mode_batch.sh Samples_mLemcat.txt > Samples_mLemcat.depthMODE.array
+bash ../../SCRIPTS/depth_mode_batch.sh Samples_Lemuroidea_2022-02-25.txt > Samples_Lemuroidea_2022-02-25.depthMODE.array
+
+../../SCRIPTS/LUKAS_VarCall/sub_jar.py -n Mode -u 1 -w "01:00:00" -a Samples_mLemcat.depthMODE.array
+sub_array.py -n Mode -u 1 -w "01:00:00" -a Samples_Lemuroidea_2022-02-25.depthMODE.array
+
+
+# gVCF 1 core 3 hours
+Samples_Lemuroidea_2022-02-25.txt
+
+bash ../../SCRIPTS/genotype_gvcf_lukas.sh Metadata_SingleCall_Lemuroidea_2022-02-25_batch1.txt > Metadata_SingleCall_Lemuroidea_2022-02-25_batch1.array # 45 samples
+bash ../../SCRIPTS/genotype_gvcf_lukas.sh Metadata_SingleCall_Lemuroidea_2022-02-25_batch2.txt > Metadata_SingleCall_Lemuroidea_2022-02-25_batch2.array
+bash ../../SCRIPTS/genotype_gvcf_lukas.sh Metadata_SingleCall_MicrocebusRef_2022-02-28.txt > Metadata_SingleCall_MicrocebusRef_2022-02-28.array
+
+sub_array.py -n gVCF -u 1 -w "03:00:00" -a Metadata_SingleCall_Lemuroidea_2022-02-25_batch1.array
+sub_array.py -n gVCF -u 1 -w "03:00:00" -a Metadata_SingleCall_Lemuroidea_2022-02-25_batch2.array
+sub_array.py -n gVCF -u 1 -w "03:00:00" -a Metadata_SingleCall_MicrocebusRef_2022-02-28.array
+
+
+# Get Variable positions
+
+bash  ../../SCRIPTS/get_variable_VCF.SNP_INDEL.sh Metadata_getVariable_Lemuroidea_2022-03-02_batch1.txt >Metadata_getVariable_Lemuroidea_2022-03-02_batch1.array
+bash  ../../SCRIPTS/get_variable_VCF.SNP_INDEL.sh Metadata_getVariable_Lemuroidea_2022-03-02_batch2.txt >Metadata_getVariable_Lemuroidea_2022-03-02_batch2.array
+sub_array.py -n getVar1 -u 1 -w "04:00:00" -a Metadata_getVariable_Lemuroidea_2022-03-02_batch1.array
+sub_array.py -n getVar2 -u 1 -w "04:00:00" -a Metadata_getVariable_Lemuroidea_2022-03-02_batch2.array
+
+# get Filtered SNPs
+bash ../../SCRIPTS/get_filtered_variable_VCF.SNP_INDEL.sh FilterVCF_Lemuroidea_2022_03_07.txt >FilterVCF_Lemuroidea_2022_03_07.array
+sub_array.py -n SNPlem -u 1 -w "04:00:00" -a FilterVCF_Lemuroidea_2022_03_07.array
+
+# get Filtered Indels
+bash ../../SCRIPTS/get_filtered_variable_VCF.SNP_INDEL.sh Metadata_filterVCF_Daubentonia.txt > FilterVCF_Daubentonia_INDELS_2022_03_07.array
+bash ../../SCRIPTS/get_filtered_variable_VCF.SNP_INDEL.sh Metadata_filterVCF_mLemCat.txt > FilterVCF_mLemcat2_indels.array
+bash ../../SCRIPTS/get_filtered_variable_VCF.SNP_INDEL.sh FilterVCF_Lemuroidea_2022_03_07.txt >FilterVCF_Lemuroidea_INDELS_2022_03_07.array
+
+sub_array.py -n indelDaub -u 1 -w "02:00:00" -a FilterVCF_Daubentonia_INDELS_2022_03_07.array
+sub_array.py -n indelLC -u 1 -w "02:00:00" -a  FilterVCF_mLemcat2_indels.array
+sub_array.py -n indelLem -u 1 -w "03:00:00" -a FilterVCF_Lemuroidea_INDELS_2022_03_07.array
+
+# Callability Masks
+
+bash ../SCRIPTS/callabilityMask_v2.sh Metadata_callability_Lemuroidea_2022-02-28_part1.txt >Metadata_callability_Lemuroidea_2022-02-28_part1.array
+bash ../SCRIPTS/callabilityMask_v2.sh Metadata_callability_Lemuroidea_2022-02-28_part2.txt >Metadata_callability_Lemuroidea_2022-02-28_part2.array
+bash ../SCRIPTS/callabilityMask_v2.sh Metadata_callability_Lemuroidea_2022-02-28_part1_REDO.txt >Metadata_callability_Lemuroidea_2022-02-28_part1_REDO.array
+
+sub_array.py -n CalFil1 -u 1 -w "23:59:00" -a Metadata_callability_Lemuroidea_2022-02-28_part1.array
+sub_array.py -n CalFil2 -u 1 -w "23:59:00" -a Metadata_callability_Lemuroidea_2022-02-28_part2.array
+sub_array.py -n CallaREDO -u 2 -w "1-18:00:00" -r lowprio -a Metadata_callability_Lemuroidea_2022-02-28_part1_REDO.array # Only needed ~21 hours wit 2 cores
+sub_array.py -n CallaRedo -u 1 -w "23:59:00" -r highprio -a Metadata_callability_Lemuroidea_2022-02-28_part2_REDO.array
+
+# Make Callable depth files
+bash ../../SCRIPTS/CallableDepth.sh Samples_mLemcat.txt > CallableDepth_mLemcat.array
+sub_array.py -n CalDepth -u 2 -w "05:00:00" -a CallableDepth_mLemcat.array
+
+# Make lists of 30mb window gVCFs per ref and genus
+for i in `seq 0 80`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_MicrocebusRef.txt > gvcflist_Microcebus_REF_${i}.txt; done
+
+for i in `seq 0 91`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_PropithecusRef.txt > gvcflist_Propithecus_REF_${i}.txt; done
+
+for i in `seq 0 75`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_Varecia.txt > gvcflist_Varecia_${i}.txt; done
+for i in `seq 0 75`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_Lemur.txt > gvcflist_Lemur_${i}.txt; done
+for i in `seq 0 75`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_HapaProlemur.txt > gvcflist_HapaProemur_${i}.txt; done
+for i in `seq 0 75`; do while read line; do ls /scratch/devel/jorkin/STREPS/2021/gVCF/SINGLE/$line/${line}_${i}.raw.snps.indels.genotyped.g.vcf.gz; done < ../../sampleList_Eulemur.txt > gvcflist_Eulemur_${i}.txt; done
+
+# merge gVCFs by 30mb windows, get unfiltered SNPs, split by individual, filter, intersect with callability, remerge into combined vcf
+
+bash /scratch/devel/jorkin/STREPS/2021/VCF/MERGED/gvcfs2filteredVcfs.sh Daubentonia sampleList_merge_Daubentonia.txt
+bash /scratch/devel/jorkin/STREPS/2021/VCF/MERGED/gvcfs2filteredVcfs.sh mLemCat2 sampleList_merge_mLemCat.txt
+bash ../gvcfs2filteredVcfs_Step1.sh Propithecus_REF ../sampleList_merge_PropithecusRef.txt > Propithecus_REF_gvcf2vcf_step1.array
+bash ../gvcfs2filteredVcfs_Step1.sh Lemur ../sampleList_merge_Lemur.txt > Lemur_gvcf2vcf_step1.array
+bash ../gvcfs2filteredVcfs_Step1.sh Eulemur ../sampleList_merge_Eulemur.txt  > Eulemur_gvcf2vcf_step1.array
+bash ../gvcfs2filteredVcfs_Step2.sh HapaProlemur ../sampleList_merge_HapaProlemur.txt > HapPro_gvcf2vcf_step2.array
+bash ../gvcfs2filteredVcfs_Step3.sh Lemur > Lemur_gvcf2vcf_step3.array
+bash ../gvcfs2filteredVcfs_Step3.sh Propithecus_REF > Propithecus_REF_gvcf2vcf_step3.array
+bash ../gvcfs2filteredVcfs_Step3.sh Eulemur > Eulemur_gvcf2vcf_step3.array
+
+	## mLemcat, Eulemur, HapaProlemur, Lemur, Varecia
+sub_array.py -n LCfilt -u 4 -w "23:59:00" -a mLemCat2_gvcfs2vcf.array		# 88 individuals, lots of SNPs, was getting cancelled for memory
+sub_array.py -n LCfilt -u 1 -w "01:00:00" -a Daubentonia_gvcfs2vcf.array	# 11 individuals, few SNPs 
+sub_array.py -n FiltVarecia -u 2 -w "02:00:00" -a Varecia_gvcf2vcf_step1.array	# Each job took about 30 minutes
+sub_array.py -n FiltHapPro -u 2 -w "3:00:00" -a HapaProlemur_gvcf2vcf_step1.array	# each took about 1.25 hours. Failed with 1 core
+sub_array.py -n FiltLem -u 2 -w "02:00:00" -a Lemur_gvcf2vcf_step1.array	# Each took about 22 minutes
+sub_array.py -n FiltEul -u 4 -w "16:00:00" -a Eulemur_gvcf2vcf_step1.array	# Only needd 3-4 hours
+
+sub_array.py -n MergeVarecia -u 1 -w "01:00:00" -a Varecia_gvcf2vcf_step2.array # Each job took about 5 minutes
+sub_array.py -n MerLem -u 1 -w "01:00:00" -a Lemur_gvcf2vcf_step2.array		# Each job took about 1 minute
+sub_array.py -n MerHap -u 1 -w "01:00:00" -a HapPro_gvcf2vcf_step2.array	# Each job took about 10 minutes
+
+sub_array.py -n CatVarecia -u 1 -w "01:00:00" -a Varecia_gvcf2vcf_step3.array
+sub_array.py -n CatLem -u 1 -w "01:00:00" -a Lemur_gvcf2vcf_step3.array		# 38443063
+sub_array.py -n CatHap -u 1 -w "02:00:00" -a HapaProlemur_gvcf2vcf_step3.array  # 38447307
+sub_array.py -n CatEulemur -u 1 -w "11:59:00" -r highprio -a Eulemur_gvcf2vcf_step3.array	#38502388
+
+	## PropithecusRef
+sub_array.py -n FiltProRef -u 3 -w "06:00:00" -a Propithecus_REF_gvcf2vcf_step1.array	# Only needed 3-4 hours
+sub_array.py -n mergeProp -u 1 -w "01:00:00" -a Propithecus_REF_gvcf2vcf_step2.array 	# 38501752 Each took about 30-45 minutes
+sub_array.py -n CatProp -u 1 -w "08:00:00" -r highprio -a Propithecus_REF_gvcf2vcf_step3.array #38502383
+sub_array.py -n sortPro -u 4 -w "08:59:00" -r highprio -a Propithecus_REF_gvcf2vcf_step4.array 
+
+	## MicrocebusRef
+sub_array.py -n FiltMicroRef -u 3 -w "06:00:00" -a Microcebus_REF_gvcf2vcf_step1.array # 38529767
+
+# Concatenate VCFs
+bash ../gvcfs2filteredVcfs_Step3.sh mLemCat2 >  mLemCat2_gvcf2vcf_step3.array
+sub_array.py -n CatmLem2 -u 1 -w "23:59:00" -r highprio -a mLemCat2_gvcf2vcf_step3.array #38442339
+
+
+# Sort  mLemcat VCF
+
+bash ../gvcfs2filteredVcfs_Step4.sh HapaProlemur > HapaProlemur_gvcf2vcf_step4.array
+bash ../gvcfs2filteredVcfs_Step4.sh Lemur > Lemur_gvcf2vcf_step4.array
+bash ../gvcfs2filteredVcfs_Step4.sh mLemcat2 > mLemcat2_gvcfs2filteredVcfs_Step4.array
+bash ../gvcfs2filteredVcfs_Step4.sh mLemCat2 > mLemCat2_gvcf2vcf_step4.array
+
+sub_array.py -n SortHapa -r highprio -u 3 -w "04:00:00" -a HapaProlemur_gvcf2vcf_step4.array	# Took ~ 2 hours (13G file)
+sub_array.py -n SortLem -r highprio -u 2 -w "04:00:00" -a Lemur_gvcf2vcf_step4.array		# Took ~ 10 mintues (1.6G file)
+sub_array.py -n SortmLem -r highprio -u 8 -w "23:59:00" -a mLemCat2_gvcf2vcf_step4.array
+sub_array.py -n sortEul -u 4 -w "08:59:00" -r highprio -a Eulemur_gvcf2vcf_step4.array 
